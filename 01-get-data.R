@@ -10,6 +10,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and limitations under the License.
 
+
 library(bcdata) #available from GitHub https://bcgov.github.io/bcdata/
 library(janitor)
 library(dplyr)
@@ -22,8 +23,11 @@ bcdc_get_record("9bff5da9-fced-4671-8ff3-f6117e5c8266")
 
 
 ## Get the tabular data with bcdata package
+## Data released under B.C. Crown Copyright Licence
+## https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA
 awards_raw <- bcdc_get_data(record = "9bff5da9-fced-4671-8ff3-f6117e5c8266",
                         resource = "aee0fed5-e1f5-4e32-b17c-c98eafdd0d36")
+
 
 ## Quick look at columns
 skimr::skim(awards_raw)
