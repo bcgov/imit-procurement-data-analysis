@@ -15,6 +15,8 @@ library(bcdata) #available from GitHub https://bcgov.github.io/bcdata/
 library(janitor)
 library(dplyr)
 library(lubridate)
+library(stringr)
+library(ggplot2)
 
 
 ## Look at ministry-contract-awards-province-of-british-columbia record 
@@ -36,10 +38,27 @@ skimr::skim(awards_raw)
 ## Tidy raw data frame
 awards_tidy <- awards_raw %>% 
   clean_names() %>%
-  mutate(days_open = as_date(closing_date) - as_date(issued_date),
-         year = year(date_awarded))  %>%
-  select(-amendments, -issued_by_organization, -closing_date, -issued_date)
+  mutate(year = year(date_awarded),
+         award_total = str_remove_all(award_total, "[,]"),
+         award_total = as.numeric(str_remove(award_total, "[$]")))  %>%
+  select(year, issued_for_organization, title, successful_vendor,
+         successful_vendor_city, award_total, province, country)
 
+
+## Total Awarded by Year
+awards_tidy %>% 
+  group_by(year) %>% 
+  summarise(total = sum(award_total)/1000000) %>% 
+  ggplot() +
+  geom_col(aes(x = year, y = total), alpha = 0.6, fill = "blue") +
+  labs(y = "Total Awarded (million $)",
+       x = "") +
+  theme_minimal() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+
+
+## Build IM/IT Categories from `title` text
 
 
   
