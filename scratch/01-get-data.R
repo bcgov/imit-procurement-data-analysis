@@ -22,6 +22,7 @@ library(ggplot2)
 ## Look at ministry-contract-awards-province-of-british-columbia record 
 ## in the B.C. Data Catalogue
 bcdc_get_record("9bff5da9-fced-4671-8ff3-f6117e5c8266")
+# bcdc_browse("9bff5da9-fced-4671-8ff3-f6117e5c8266") #open in browser
 
 
 ## Get the tabular data with bcdata package
