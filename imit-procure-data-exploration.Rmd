@@ -1,0 +1,123 @@
+---
+title: ''
+date: '`r format(Sys.time(), "%d, %B, %Y")`'
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+---
+
+<!--
+Copyright 2019 Province of British Columbia
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
+-->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(bcdata) #available from GitHub https://bcgov.github.io/bcdata/
+library(janitor)
+library(dplyr)
+library(lubridate)
+library(stringr)
+library(ggplot2)
+library(readr)
+library(skimr)
+```
+
+# IM/IT Procurement Data: Exploration
+
+An exploration of public IM/IT Procurement data for British Columbia.
+
+
+### Raw Data
+This analysis uses publicly available data from the B.C. Data Catalogue---ministry-contract-awards-province-of-british-columbia record---released under the [B.C. Crown Copyright Licence](https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA)
+
+Metadata record for ministry-contract-awards-province-of-british-columbia record:
+
+```{r review-data}
+## Look at ministry-contract-awards-province-of-british-columbia record 
+## in the B.C. Data Catalogue
+bcdc_get_record("9bff5da9-fced-4671-8ff3-f6117e5c8266")
+# bcdc_browse("9bff5da9-fced-4671-8ff3-f6117e5c8266") #open in browser
+```
+
+Pull the data set and get familiar with the variables:
+
+```{r get-data}
+## Get the tabular data with bcdata package
+## Data released under B.C. Crown Copyright Licence
+## https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA
+# awards_raw <- bcdc_get_data(record = "9bff5da9-fced-4671-8ff3-f6117e5c8266",
+#                         resource = "aee0fed5-e1f5-4e32-b17c-c98eafdd0d36")
+# 
+# if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
+# awards_raw %>% write_rds("tmp/awards_raw.rds")
+
+awards_raw <- read_rds("tmp/awards_raw.rds")
+
+head(awards_raw)
+```
+
+
+### Tidy Data
+
+Tidy the raw data frame, e.g. convert award amounts from text to numbers, make a year column,
+drop columns not likely to be informative at this time:
+
+```{r clean-data}
+## Tidy raw data frame
+awards_tidy <- awards_raw %>% 
+  clean_names() %>%
+  mutate(year = year(date_awarded),
+         award_total = str_remove_all(award_total, "[,]"),
+         award_total = as.numeric(str_remove(award_total, "[$]")))  %>%
+  select(year, issued_for_organization, title, successful_vendor,
+         successful_vendor_city, award_total, province, country)
+
+skim(awards_tidy) %>% kable()
+```
+
+Find IM/IT awards and build IM/IT categories from text descriptors in the `title` field:
+```{r imit-rows}
+
+```
+
+
+### Data Visualizations & Summaries
+
+#### Total procurement awards per year (2012-2018):
+
+```{r}
+## Total Awarded by Year
+awards_tidy %>% 
+  group_by(year) %>% 
+  summarise(total = sum(award_total)/1000000) %>% 
+  ggplot() +
+  geom_col(aes(x = year, y = total), alpha = 0.6, fill = "blue") +
+  labs(y = "Total Awarded (million $)",
+       x = "",
+       title = "Total Procurement Awards per Year (2012-2018)",
+       subtitle = "Only includes awards through BCBids",
+       caption = "Data from the B.C. Data Catalogue") +
+  theme_minimal() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
