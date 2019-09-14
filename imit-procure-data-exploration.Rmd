@@ -39,15 +39,17 @@ library(stringr)
 library(ggplot2)
 library(readr)
 library(skimr)
+library(readxl)
 ```
 
 # IM/IT Procurement Data: Exploration
 
-An exploration of public IM/IT Procurement data for British Columbia.
+An exploration of IM/IT Procurement data for British Columbia.
 
 
 ### Raw Data
-This analysis uses publicly available data from the B.C. Data Catalogue---ministry-contract-awards-province-of-british-columbia record---released under the [B.C. Crown Copyright Licence](https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA)
+
+Starting with the publicly available data from the B.C. Data Catalogue---ministry-contract-awards-province-of-british-columbia record---released under the [B.C. Crown Copyright Licence](https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA).
 
 Metadata record for ministry-contract-awards-province-of-british-columbia record:
 
@@ -58,7 +60,7 @@ bcdc_get_record("9bff5da9-fced-4671-8ff3-f6117e5c8266")
 # bcdc_browse("9bff5da9-fced-4671-8ff3-f6117e5c8266") #open in browser
 ```
 
-Pull the data set and get familiar with the variables:
+Pull the B.C. Data Catalogue data set and get familiar with the variables:
 
 ```{r get-data}
 ## Get the tabular data with bcdata package
@@ -70,28 +72,65 @@ Pull the data set and get familiar with the variables:
 # if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
 # awards_raw %>% write_rds("tmp/awards_raw.rds")
 
-awards_raw <- read_rds("tmp/awards_raw.rds")
+awards_bcbid <- read_rds("tmp/awards_raw.rds")
 
-head(awards_raw)
+head(awards_bcbid)
+```
+
+Next, pull in the program-area provided BCDevExchange code-with-us data set:
+
+```{r}
+awards_cwu <- read_xlsx(here::here("data/Code With Us Opportunity Tracking.xlsx"),
+                 sheet = "Sheet1", skip = 6)
+
+head(awards_cwu)
 ```
 
 
 ### Tidy Data
 
-Tidy the raw data frame, e.g. convert award amounts from text to numbers, make a year column,
-drop columns not likely to be informative at this time:
+Tidy the raw data frames, e.g. convert award amounts from text to numbers, make a fiscal year column,
+drop columns not likely to be informative at this time and so on:
 
 ```{r clean-data}
-## Tidy raw data frame
-awards_tidy <- awards_raw %>% 
+
+## Convert award date to fiscal year
+convert_to_fy <- function(date){
+fy <- as.integer(format(date, "%Y")) + (as.integer(format(date, "%m")) >= 4)
+paste0(fy-1, "/", str_sub(fy, 3, 4))
+}
+
+
+## Tidy awards_bcbids raw data frame
+awards_bcbid_tidy <- awards_bcbid %>% 
   clean_names() %>%
-  mutate(year = year(date_awarded),
+  mutate(fiscal_year = convert_to_fy(date = date_awarded),
          award_total = str_remove_all(award_total, "[,]"),
          award_total = as.numeric(str_remove(award_total, "[$]")))  %>%
-  select(year, issued_for_organization, title, successful_vendor,
-         successful_vendor_city, award_total, province, country)
+  select(fiscal_year, issued_for_organization, title, successful_vendor,
+         successful_vendor_city, award_total, province, country) %>% 
+  mutate(data_source = "bcdc_bcbid")
 
-skim(awards_tidy) %>% kable()
+skim(awards_bcbid_tidy ) %>% kable()
+
+
+## Tidy awards_cwu raw data frame
+awards_cwu_tidy <- awards_cwu %>% 
+  clean_names() %>% 
+  filter(!is.na(amount_paid),
+         !is.na(assigned_to)) %>% 
+  select(award_total = price, title, fiscal_year = fiscal_year_payment_was_made,
+         issued_for_organization = ministry, successful_vendor = assigned_to) %>% 
+  mutate(award_total = as.numeric(award_total),
+         province = NA_character_,
+         successful_vendor_city = NA_character_,
+         country = NA_character_,
+         data_source = "cwu")
+
+## Join data sets
+awards_tidy <- awards_bcbid_tidy %>%
+  bind_rows(awards_cwu_tidy)
+
 ```
 
 Find IM/IT awards and build IM/IT categories from text descriptors in the `title` field:
@@ -102,20 +141,22 @@ Find IM/IT awards and build IM/IT categories from text descriptors in the `title
 
 ### Data Visualizations & Summaries
 
-#### Total procurement awards per year (2012-2018):
+#### Total procurement awards per fiscal year (2012-2018):
 
 ```{r}
 ## Total Awarded by Year
 awards_tidy %>% 
-  group_by(year) %>% 
+  filter(fiscal_year != c("2011/12"),
+         fiscal_year != c("2019/20")) %>% 
+  group_by(fiscal_year) %>% 
   summarise(total = sum(award_total)/1000000) %>% 
   ggplot() +
-  geom_col(aes(x = year, y = total), alpha = 0.6, fill = "blue") +
+  geom_col(aes(x = fiscal_year, y = total), alpha = 0.6, fill = "blue") +
   labs(y = "Total Awarded (million $)",
        x = "",
        title = "Total Procurement Awards per Year (2012-2018)",
-       subtitle = "Only includes awards through BCBids",
-       caption = "Data from the B.C. Data Catalogue") +
+       subtitle = "Only includes awards through BCBids & BCDevExchange Code With Us",
+       caption = "Data from the B.C. Data Catalogue & BCDevExchange") +
   theme_minimal() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
