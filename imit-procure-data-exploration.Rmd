@@ -44,7 +44,7 @@ library(tidytext) #tidying text data
 
 # IM/IT Procurement Data: Exploration
 
-An exploration of IM/IT Procurement data for British Columbia. This document outlines the exploration phase---finding, getting and cleaning multiple, different data sources, determining which awards are IM/IT-related, and some descriptive summaries of the data.
+An exploration of IM/IT Procurement data for British Columbia. This document outlines the exploration phase---finding, getting and cleaning multiple, different data sources, determining which awards are IM/IT-related, and some descriptive summaries of the combined data.
 
 
 ### Raw Data
@@ -53,7 +53,7 @@ An exploration of IM/IT Procurement data for British Columbia. This document out
 
 Get the publicly available data from the B.C. Data Catalogue---ministry-contract-awards-province-of-british-columbia record---released under the [B.C. Crown Copyright Licence](https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA).
 
-Metadata record for ministry-contract-awards-province-of-british-columbia record:
+Read the metadata record for ministry-contract-awards-province-of-british-columbia record:
 
 ```{r review-bcdc-data}
 ## Look at ministry-contract-awards-province-of-british-columbia record 
@@ -94,10 +94,10 @@ glimpse(awards_cwu)
 
 #### Awards Over 10,000 & Direct Award Data from the Open Information Webpage
 
-Data on contracts over $10,000 housed in PDF and XLS files---available by Ministry for each quarter from April 2017 to June 2019: [https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868](https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868)
+Data on contracts over $10,000 are available on-line, housed in PDF and XLS files (with different formats over time)---by Ministry for each quarter from April 2017 to June 2019: [https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868](https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868)
 
 
-Data on directly awarded contracts housed in PDF and XLS files---available by Ministry for each month from 2016-17 to June 2019: [https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF](https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF)
+Data on directly awarded contracts are available on-line, housed in PDF and XLS files (with different formats over time)---available by Ministry for each month from 2016-17 to June 2019: [https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF](https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF)
 
 
 ### Tidy Data
@@ -148,7 +148,7 @@ glimpse(awards_tidy)
 
 Find IM/IT awards and build IM/IT categories from text descriptors in the `title` field.
 
-Look at the text by Ministry, as a start:
+Look at the most common words (n > 100) in the `title` field, as a start:
 
 ```{r title-text}
 title_text <- awards_tidy %>%
@@ -159,10 +159,10 @@ title_text <- awards_tidy %>%
 
 title_text %>%
   count(word, sort = TRUE) %>% 
-  filter(n > 50) %>%
+  filter(n > 100) %>%
   mutate(word = reorder(word, n)) %>%
   ggplot(aes(word, n)) +
-  geom_col() +
+  geom_col(alpha = 0.6) +
   xlab(NULL) +
   coord_flip() +
   theme_minimal()
@@ -180,6 +180,7 @@ title_text %>%
 #     theme_minimal()
 ```
 
+Go through `title` descriptions and assign into categories based on presence/absence of im/it-related words (e.g. `software` `==` `imit-software`):
 
 ```{r imit-rows}
 imit_words <- c("software", "data", "licenses", "information", "technology",
@@ -187,31 +188,38 @@ imit_words <- c("software", "data", "licenses", "information", "technology",
 
 awards_imit <- awards_tidy %>%
   mutate(title = str_to_lower(title),
-         category = case_when(str_detect(title, "software") ~ "imit-software",
+         subcategory = case_when(str_detect(title, "software") ~ "imit-software",
                               str_detect(title, "license") ~ "imit-software",
                               str_detect(title, "licence") ~ "imit-software",
-                              # str_detect(title, "network") ~ "imit-hardware",
+                              str_detect(title, "network") ~ "imit-hardware",
                               str_detect(title, "laptop") ~ "imit-hardware",
-                               str_detect(title, "architect support") ~ "imit-support",
-                              TRUE ~ "other"))
+                              str_detect(title, "architect support") ~ "imit-support",
+                              TRUE ~ "everything else"),
+         category = case_when(str_detect(subcategory, "imit") ~ "imit",
+                              TRUE ~ "everything else"))
+
+glimpse(awards_imit)
 ```
 
 
 ### Descriptive Summaries & Visualizations
 
+Summarize total amount awarded by category by fiscal year:
+
 ```{r}
-## Total Awarded by Year
-awards_tidy %>% 
+## Total Amount Awarded by Year
+awards_imit %>% 
   filter(fiscal_year != c("2011/12"),
          fiscal_year != c("2019/20")) %>% 
-  group_by(fiscal_year) %>% 
+  group_by(fiscal_year, category) %>% 
   summarise(total = sum(award_total)/1000000) %>% 
   ggplot() +
-  geom_col(aes(x = fiscal_year, y = total), alpha = 0.6, fill = "blue") +
-  labs(y = "Total Awarded (million $)",
+  geom_col(aes(x = fiscal_year, y = total, fill = category), alpha = 0.5) +
+  scale_fill_manual(name="", values = c("imit" = "blue", "everything else" = "grey60")) +
+  labs(y = "Total Amount Awarded (million $)",
        x = "",
-       title = "Total Procurement Awards per Year (2012-2018)",
-       subtitle = "Only includes awards through BCBids & BCDevExchange Code With Us",
+       title = "Total Amount Awarded per Year (2012/13-2018/19)",
+       subtitle = "Only includes awards through BCBids & BCDevExchange Code With Us at this time",
        caption = "Data from the B.C. Data Catalogue & BCDevExchange") +
   theme_minimal() +
   theme(panel.grid.major.x = element_blank(),
