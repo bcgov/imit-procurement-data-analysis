@@ -49,7 +49,7 @@ An exploration of IM/IT Procurement data for British Columbia. This document out
 
 ### Raw Data
 
-#### BCBid Awards from the B.C. Data Catalogue
+#### BCBid
 
 Get the publicly available data from the B.C. Data Catalogue---ministry-contract-awards-province-of-british-columbia record---released under the [B.C. Crown Copyright Licence](https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA).
 
@@ -80,7 +80,7 @@ glimpse(awards_bcbid)
 ```
 
 
-#### BCDevExchange Code-With-Us Awards
+#### Code-With-Us
 
 Next, pull in the program-area provided BCDevExchange code-with-us data set:
 
@@ -92,13 +92,14 @@ glimpse(awards_cwu)
 ```
 
 
-#### Awards Over 10,000 & Direct Award Data from the Open Information Webpage
+#### Open Information Webpage
 
 Data on contracts over $10,000 are available on-line, housed in PDF and XLS files (with different formats over time)---by Ministry for each quarter from April 2017 to June 2019: [https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868](https://www2.gov.bc.ca/gov/content?id=AFBE378C5C684CF980CD6008364BD868)
 
 
 Data on directly awarded contracts are available on-line, housed in PDF and XLS files (with different formats over time)---available by Ministry for each month from 2016-17 to June 2019: [https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF](https://www2.gov.bc.ca/gov/content?id=217BF2AE401E44F1A5DA3CB4C36E95AF)
 
+_**NOTE:**_ None of the data sets include information on award type (e.g. IM/IT) so users need to determine this from the available fields.
 
 ### Tidy Data
 
@@ -180,7 +181,7 @@ title_text %>%
 #     theme_minimal()
 ```
 
-Go through `title` descriptions and assign into categories based on presence/absence of im/it-related words (e.g. `software` `==` `imit-software`):
+Go through `title` descriptions and assign into categories based on data source or presence/absence of im/it-related words (e.g. `software` `==` `imit-software`):
 
 ```{r imit-rows}
 imit_words <- c("software", "data", "licenses", "information", "technology",
@@ -194,12 +195,16 @@ awards_imit <- awards_tidy %>%
                               str_detect(title, "network") ~ "imit-hardware",
                               str_detect(title, "laptop") ~ "imit-hardware",
                               str_detect(title, "architect support") ~ "imit-support",
+                              data_source == "cwu" ~ "imit",
                               TRUE ~ "everything else"),
          category = case_when(str_detect(subcategory, "imit") ~ "imit",
                               TRUE ~ "everything else"))
 
 glimpse(awards_imit)
 ```
+
+
+_**NEXT**_ Work with IM/IT subject experts to identify a representative sample of awards that are IM/IT and IM/IT subcategories to train a predictive text model. 
 
 
 ### Descriptive Summaries & Visualizations
@@ -219,7 +224,7 @@ awards_imit %>%
   labs(y = "Total Amount Awarded (million $)",
        x = "",
        title = "Total Amount Awarded per Year (2012/13-2018/19)",
-       subtitle = "Only includes awards through BCBids & BCDevExchange Code With Us at this time",
+       subtitle = "IM/IT category only includes code-with-us & awards related to software at this time",
        caption = "Data from the B.C. Data Catalogue & BCDevExchange") +
   theme_minimal() +
   theme(panel.grid.major.x = element_blank(),
