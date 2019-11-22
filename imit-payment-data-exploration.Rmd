@@ -1,0 +1,81 @@
+---
+title: ''
+date: '`r format(Sys.time(), "%d, %B, %Y")`'
+output:
+  html_document:
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '6'
+---
+
+<!--
+Copyright 2019 Province of British Columbia
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
+-->
+
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+
+library(bcdata) #source data from the B.C. Data Catalogue
+library(janitor) #clean_names()
+library(dplyr) #data munging
+library(lubridate) #working with dates
+library(stringr) #working with strings
+library(ggplot2) #plotting
+library(readr) #read in csv files
+library(readxl) #read in xlsx files
+library(tidytext) #tidying text data
+```
+
+# IM/IT Payments Data: Exploration
+
+An exploration of IM/IT Payments data for British Columbia. This document outlines the exploration phase---getting and cleaning bcgov payments data from the B.C. Data Catalogue, determining which payments are IM/IT-related, and some descriptive summaries of the data.
+
+
+### Raw Data
+
+#### Payments
+
+Get the publicly available data from the B.C. Data Catalogue---Consolidated Revenue Fund Detailed Schedules of Payments - Other Supplier Payments record---released under the [Open Government Licence &mdash; British Columbia licence](https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61).
+
+Read the metadata record for consolidated-revenue-fund-detailed-schedules-of-payments-other-supplier-payments record:
+
+```{r review-bcdc-data}
+## Look at consolidated-revenue-fund-detailed-schedules-of-payments-other-supplier-payments record 
+## in the B.C. Data Catalogue
+bcdc_get_record("f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc")
+# bcdc_browse("f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc") #open in browser
+```
+
+Pull the B.C. Data Catalogue data set and get familiar with the variables:
+
+```{r get-bcdc-data}
+## Get the tabular data with bcdata package
+## Data released under released under the released under the [Open Government Licence - British Columbia licence](https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61).
+payments_raw <- bcdc_get_data(record = "f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc",
+                        resource = "54473f32-6ba5-4075-984a-745fef3c5806")
+
+if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
+payments_raw %>% write_rds("tmp/payments_raw.rds")
+
+
+glimpse(payments_raw)
+```
+
+
+
