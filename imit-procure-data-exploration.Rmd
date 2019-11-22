@@ -31,7 +31,7 @@ See the License for the specific language governing permissions and limitations 
 ```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 
-library(bcdata) #available from GitHub https://bcgov.github.io/bcdata/
+library(bcdata) #source data from the B.C. Data Catalogue
 library(janitor) #clean_names()
 library(dplyr) #data munging
 library(lubridate) #working with dates
