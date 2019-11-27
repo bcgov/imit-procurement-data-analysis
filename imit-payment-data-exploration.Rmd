@@ -32,13 +32,12 @@ See the License for the specific language governing permissions and limitations 
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
 
 library(bcdata) #source data from the B.C. Data Catalogue
-library(purrr)
-# library(janitor) #clean_names()
+library(purrr)  #map over resources for reading in data
 library(dplyr) #data munging
+library(stringr) #working with strings
+library(readr) #read/write files
 # library(lubridate) #working with dates
-# library(stringr) #working with strings
 # library(ggplot2) #plotting
-# library(readr) #read in csv files
 # library(readxl) #read in xlsx files
 # library(tidytext) #tidying text data
 ```
@@ -68,21 +67,24 @@ payment_record <- bcdc_get_record("f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc")
 ## Map over and merge the tabular data
 # map_chr(payment_record$resources, "id")
 
-payments_resources_df <- payment_record$resource_df
+payments_resources_df <- payment_record$resource_df %>% 
+  mutate(year = str_sub(name,-31, -27))
 
-payments_raw <- payments_resources_df  %>% 
-  filter(location != "bcgeographicwarehouse") %>% 
-  # slice(1:2) %>% 
-  select(id) %>% 
-  pull() %>% 
-map_df(~ bcdc_get_data(record = "f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc",
-                        resource = .))
+payments_raw <- map2_dfr(.x = payments_resources_df$id, 
+        .y = payments_resources_df$year, 
+        .f = ~{bcdc_get_data(record = "f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc",
+                        resource = .x) %>%
+         select(1:2) %>%
+            rename(name = 1,          #renaming columns using position, 
+                   amount = 2) %>%    #fragile, but names differ across dfs
+         mutate(year = .y)
+          })
 
-# if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
-# payments_raw %>% write_rds("tmp/payments_raw.rds")
-# 
-# 
-# glimpse(payments_raw)
+if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
+payments_raw %>% write_rds("tmp/payments_raw.rds")
+
+
+glimpse(payments_raw)
 ```
 
 
