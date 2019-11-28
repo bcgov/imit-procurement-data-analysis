@@ -36,9 +36,8 @@ library(purrr)  #map over resources for reading in data
 library(dplyr) #data munging
 library(stringr) #working with strings
 library(readr) #read/write files
-# library(lubridate) #working with dates
-# library(ggplot2) #plotting
-# library(readxl) #read in xlsx files
+library(ggplot2) #plotting
+library(scales) #comma
 # library(tidytext) #tidying text data
 ```
 
@@ -77,15 +76,55 @@ payments_raw <- map2_dfr(.x = payments_resources_df$id,
          select(1:2) %>%
             rename(name = 1,          #renaming columns using position, 
                    amount = 2) %>%    #fragile, but names differ across dfs
-         mutate(year = .y)
+         mutate(year = as.numeric(.y))
           })
 
 if (!exists("tmp"))  dir.create('tmp', showWarnings = FALSE)
 payments_raw %>% write_rds("tmp/payments_raw.rds")
-
 
 glimpse(payments_raw)
 ```
 
 
 
+```{r imit-rows}
+
+# payments_raw %>% filter(str_detect(name, "IBM")) %>% distinct(name)
+
+payments_imit <- payments_raw %>%
+  mutate(imit = case_when(str_detect(name, "IBM") ~ "IBM",
+                          str_detect(name, "TELUS") ~ "Telus",
+                          str_detect(name, "CGI GROUP") ~ "CGI",
+                          str_detect(name, "CGI INFORMATION") ~ "CGI",
+                          str_detect(name, "ORACLE") ~ "Oracle",
+                          str_detect(name, "SUN MICROSYSTEMS") ~ "SUN",
+                          str_detect(name, "PACKARD") ~ "Hewlett-Packard",
+                              TRUE ~ NA_character_))
+
+glimpse(payments_imit)
+```
+
+
+
+```{r}
+## Payment Totals by Year Over Time
+payments_imit %>% 
+  filter(!is.na(imit)) %>% 
+  group_by(year, imit) %>% 
+  summarise(total = sum(amount)/1000000) %>% 
+  ggplot() +
+  geom_area(aes(x = year, y = total, fill = imit), alpha = 0.5) +
+  scale_y_continuous(expand = c(0,0)) +
+  # limits = c(0, 150), breaks = seq(0, 150, 50),
+  scale_x_continuous(limits = c(2007, 2019), 
+                     breaks = seq(2008, 2019, 1), 
+                     expand = c(0,0)) +
+  labs(y = "Total Payments (Million $)",
+       x = "",
+       fill = "",
+       title = "IMIT Payments (2007-2019)",
+       caption = "Data from the B.C. Data Catalogue") +
+  theme_minimal() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
