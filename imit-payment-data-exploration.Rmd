@@ -96,9 +96,14 @@ payments_imit <- payments_raw %>%
                           str_detect(name, "TELUS") ~ "Telus",
                           str_detect(name, "CGI GROUP") ~ "CGI",
                           str_detect(name, "CGI INFORMATION") ~ "CGI",
-                          str_detect(name, "ORACLE") ~ "Oracle",
-                          str_detect(name, "SUN MICROSYSTEMS") ~ "SUN",
-                          str_detect(name, "PACKARD") ~ "Hewlett-Packard",
+                          str_detect(name, "ORACLE") ~ "Oracle/Sun",
+                          str_detect(name, "SUN MICROSYSTEMS") ~ "Oracle/Sun",
+                          str_detect(name, "PACKARD") ~ "Hewlett-Packard/EDS/ESIT",
+                          str_detect(name, "EDS CANADA") ~ "Hewlett-Packard/EDS/ESIT",
+                          str_detect(name, "EDS ADVANCED") ~ "Hewlett-Packard/EDS/ESIT",
+                          str_detect(name, "ESIT CANADA") ~ "Hewlett-Packard/EDS/ESIT",
+                          str_detect(name, "ESIT ADVANCED") ~ "Hewlett-Packard/EDS/ESIT",
+                          str_detect(name, "DELOITTE") ~ "Deloitte",
                               TRUE ~ NA_character_))
 
 glimpse(payments_imit)
