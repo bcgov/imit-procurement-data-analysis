@@ -11,55 +11,175 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 
-library(bcdata) #available from GitHub https://bcgov.github.io/bcdata/
+library(readxl)
+library(httr)
 library(janitor)
 library(dplyr)
-library(lubridate)
 library(stringr)
-library(ggplot2)
+library(rvest)
+library(purrr)
 
 
-## Look at ministry-contract-awards-province-of-british-columbia record 
-## in the B.C. Data Catalogue
-bcdc_get_record("9bff5da9-fced-4671-8ff3-f6117e5c8266")
-# bcdc_browse("9bff5da9-fced-4671-8ff3-f6117e5c8266") #open in browser
+## Grab CITZ Procurement xlsx files from bcgov Open Information Catalogue
+## https://www2.gov.bc.ca/gov/content?id=9710AD9FEF33424589928C639851205B
+## and create a machine-readable data frame
 
 
-## Get the tabular data with bcdata package
-## Data released under B.C. Crown Copyright Licence
-## https://www2.gov.bc.ca/gov/content?id=1AAACC9C65754E4D89A118B875E0FBDA
-awards_raw <- bcdc_get_data(record = "9bff5da9-fced-4671-8ff3-f6117e5c8266",
-                        resource = "aee0fed5-e1f5-4e32-b17c-c98eafdd0d36")
+#-------------------------------------------------------------------------------
+## Contracts Over $10K
 
 
-## Quick look at columns
-skimr::skim(awards_raw)
+## Do it for one resource URL
+## Download file to tempfile using URL, read in file, delete temp file
+url <- "http://docs.openinfo.gov.bc.ca/CO14507_Contracts_Over_10000_Ministry_of_Citizens'_Services_October_December_2018.xlsx"
+GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
+
+fy <- str_sub(url,-9,-6)
+
+df <- read_xlsx(tf, range = cell_cols("B:M")) %>%
+  mutate(fiscal_year = fy)
+
+unlink(tf)
 
 
-## Tidy raw data frame
-awards_tidy <- awards_raw %>% 
-  clean_names() %>%
-  mutate(year = year(date_awarded),
-         award_total = str_remove_all(award_total, "[,]"),
-         award_total = as.numeric(str_remove(award_total, "[$]")))  %>%
-  select(year, issued_for_organization, title, successful_vendor,
-         successful_vendor_city, award_total, province, country)
+## Do it for ALL resource URLs
+## Get main web page with URLs to pages with resources
+citz_over10k_main <- read_html("https://www2.gov.bc.ca/gov/search?q=%2Binmeta%3Adc.contributor%3DMinistry+of+Citizens%27+Services&id=DECF07E95C5641F09270121869929025&tab=1")
 
 
-## Total Awarded by Year
-awards_tidy %>% 
-  group_by(year) %>% 
-  summarise(total = sum(award_total)/1000000) %>% 
-  ggplot() +
-  geom_col(aes(x = year, y = total), alpha = 0.6, fill = "blue") +
-  labs(y = "Total Awarded (million $)",
-       x = "") +
-  theme_minimal() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
+## Create df of URLs for web pages with resources
+citz_over10k_pages <- citz_over10k_main %>%
+  html_nodes("a") %>%
+  html_attr("href") %>%
+  tibble() %>%
+  filter(str_detect(., "enSearch"))
 
 
-## Build IM/IT Categories from `title` text
+## Map over each html page and create a df of resource download URLs
+citz_over10k_urls <- map_dfr(.x = citz_over10k_pages$.,
+                             .f = ~ {
+                               read_html(paste0("https://www2.gov.bc.ca/", .x)) %>%
+                                 html_nodes("a") %>%
+                                 html_attr("href") %>%
+                                 tibble() %>%
+                                 filter(str_detect(., "xlsx"))
+                             })  
+
+## Note: not all 9 resources are xlsx files, null report in PDF format (dropped)
+## Note: some of the 8 xlsx resources have differing number of empty (non-data) leading rows,
+## different column names and different number of columns (empty, trailing columns)
 
 
+## Supply column names to mitigate differing column names
+column_names <- c("start_date",                                                  
+"contract_reference_number",                                  
+"ministry_and_office_division_or_branch_procuring_the_service",
+"name_of_the_contractor",                                    
+"initial_contract_value",                                     
+"current_amendment",                                         
+"amended_contract_value",                                    
+"description_of_work",                                       
+"detailed_description",                                      
+"delivery_date",                                          
+"comments_optional_as_required",                             
+"procurement_process")
+
+
+# Supply column data types to mitigate empty rows generating data type "guessing"
+column_types = c("date","text","text", "text","numeric","numeric",
+                  "numeric","text","text", "date","text","text")
+
+
+## Map over each download URL, download and read in xlsx file, create a df with data from all files
+citz_over10k_data <- map_dfr(.x = citz_over10k_urls$.,
+                             .f = ~{GET(.x, write_disk(tf <- tempfile(fileext = ".xlsx")))
+
+fy <- str_sub(.x, -9, -6) #grab year from file name
+
+read_xlsx(tf,
+    range = cell_cols("B:M"), #grab select columns to mitigate empty, trailing columns
+    col_names = column_names,
+                col_types = column_types) %>%
+  mutate(fiscal_year = fy, #add fy to df
+         ministry_name = "citz",
+         procurement_type = "over_10k")
+}) %>% 
+  filter(!is.na(start_date)) ## remove non-data rows
+
+
+#-------------------------------------------------------------------------------
+## Directly Awarded Contracts 
+
+
+## Read main web pages that have URLs to web pages with resources
+citz_da_main_pages <- tibble(urls = c("https://www2.gov.bc.ca/gov/search?q=%2Binmeta%3Adc.contributor%3DMinistry+of+Citizens%27+Services&id=30E96E61F14C436B9727AAA4FEE2E251",
+"https://www2.gov.bc.ca/gov/search?id=30E96E61F14C436B9727AAA4FEE2E251&page=2&q=%2Binmeta%3Adc.contributor%3DMinistry+of+Citizens%27+Services&sort=D&tab=1",
+"https://www2.gov.bc.ca/gov/search?id=30E96E61F14C436B9727AAA4FEE2E251&page=3&q=%2Binmeta%3Adc.contributor%3DMinistry+of+Citizens%27+Services&sort=D&tab=1"))
+
+
+## Create df of URLs for web pages with resources
+citz_da_pages <- map_dfr(.x = citz_da_main_pages$urls, 
+                    .f = ~{read_html(.x) %>% 
+  html_nodes("a") %>%
+  html_attr("href") %>%
+  tibble() %>%
+  filter(str_detect(., "enSearch"))
+})
   
+
+## Map over each html page and create a df of resource download URLs
+citz_da_urls <- map_dfr(.x = citz_da_pages$.,
+                             .f = ~ {
+                               read_html(paste0("https://www2.gov.bc.ca/", .x)) %>%
+                                 html_nodes("a") %>%
+                                 html_attr("href") %>%
+                                 tibble() %>%
+                                 filter(str_detect(., "xlsx"))
+                             })  
+ 
+
+# Supply column data types to mitigate empty rows generating data type "guessing"
+column_types = c("date", "text", "text", "text", "numeric", "text", "date", "text")
+
+## Map over each download URL, download and read in xlsx file, create a df with data from all files
+citz_da_data <- map_dfr(.x = citz_da_urls$.,
+                             .f = ~{GET(.x, write_disk(tf <- tempfile(fileext = ".xlsx")))
+
+fy <- str_sub(.x, -9, -6) #grab year from file name
+
+read_xlsx(tf, skip = 5,  col_types = column_types) %>%
+  clean_names() %>% 
+  mutate(fiscal_year = fy, #add fy to df
+         ministry_name = "citz",
+         procurement_type = "direct_award")
+}) %>% 
+  filter(!is.na(start_date)) ## remove non-data rows
+ 
+
+#-------------------------------------------------------------------------------
+## Put Data Frames Together 
+
+#  [1] "start_date"                                     
+#  [2] "contract_reference_number"                      
+#  [3] "office_division_or_branch_procuring_the_service"
+#  [4] "name_of_the_contractor"                         
+#  [5] "contract_value"                                 
+#  [6] "description_of_work"                            
+#  [7] "delivery_date"                                  
+#  [8] "direct_award_criteria/procurement_process"                          
+#  [9] "fiscal_year"                                    
+# [10] "ministry_name"                                  
+# [11] "procurement_type" 
+
+foo <- citz_da_data %>%
+  rename("direct_award_criteria/procurement_process" = "direct_award_criteria")
+
+data <- citz_over10k_data %>% rename("direct_award_criteria/procurement_process" = "procurement_process",
+                             "office_division_or_branch_procuring_the_service" = "ministry_and_office_division_or_branch_procuring_the_service") %>% 
+  mutate(contract_value = amended_contract_value) %>% 
+bind_rows(foo)
+
+
+
+
+
