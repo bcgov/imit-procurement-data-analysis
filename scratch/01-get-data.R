@@ -18,6 +18,8 @@ library(dplyr)
 library(stringr)
 library(rvest)
 library(purrr)
+library(readr)
+library(here)
 
 
 ## Grab CITZ Procurement xlsx files from bcgov Open Information Catalogue
@@ -30,16 +32,19 @@ library(purrr)
 
 
 ## Do it for one resource URL
-## Download file to tempfile using URL, read in file, delete temp file
-url <- "http://docs.openinfo.gov.bc.ca/CO14507_Contracts_Over_10000_Ministry_of_Citizens'_Services_October_December_2018.xlsx"
-GET(url, write_disk(tf <- tempfile(fileext = ".xlsx")))
-
-fy <- str_sub(url,-9,-6)
-
-df <- read_xlsx(tf, range = cell_cols("B:M")) %>%
-  mutate(fiscal_year = fy)
-
-unlink(tf)
+## Download file to temporary_file using URL, read in file, delete temporary_file file
+# url <- "http://docs.openinfo.gov.bc.ca/CO14507_Contracts_Over_10000_Ministry_of_Citizens'_Services_October_December_2018.xlsx"
+# 
+# temporary_file <- tempfile(fileext = ".xlsx")
+# 
+# GET(url, write_disk(temporary_file))
+# 
+# fy <- str_sub(url,-9,-6)
+# 
+# data <- read_xlsx(temporary_file, range = cell_cols("B:M")) %>%
+#   mutate(fiscal_year = fy)
+# 
+# unlink(temporary_file)
 
 
 ## Do it for ALL resource URLs
@@ -65,6 +70,7 @@ citz_over10k_urls <- map_dfr(.x = citz_over10k_pages$.,
                                  filter(str_detect(., "xlsx"))
                              })  
 
+
 ## Note: not all 9 resources are xlsx files, null report in PDF format (dropped)
 ## Note: some of the 8 xlsx resources have differing number of empty (non-data) leading rows,
 ## different column names and different number of columns (empty, trailing columns)
@@ -86,25 +92,35 @@ column_names <- c("start_date",
 
 
 # Supply column data types to mitigate empty rows generating data type "guessing"
-column_types = c("date","text","text", "text","numeric","numeric",
+column_types_over10 = c("date","text","text", "text","numeric","numeric",
                   "numeric","text","text", "date","text","text")
 
 
 ## Map over each download URL, download and read in xlsx file, create a df with data from all files
-citz_over10k_data <- map_dfr(.x = citz_over10k_urls$.,
-                             .f = ~{GET(.x, write_disk(tf <- tempfile(fileext = ".xlsx")))
-
+citz_over10k_data_raw <- map_dfr(.x = citz_over10k_urls$.,
+                             .f = ~{temporary_file <- tempfile(fileext = ".xlsx")
+                               GET(.x, write_disk(temporary_file))
+                              
 fy <- str_sub(.x, -9, -6) #grab year from file name
 
-read_xlsx(tf,
+read_xlsx(temporary_file,
     range = cell_cols("B:M"), #grab select columns to mitigate empty, trailing columns
     col_names = column_names,
-                col_types = column_types) %>%
+                col_types = column_types_over10) %>%
   mutate(fiscal_year = fy, #add fy to df
          ministry_name = "citz",
          procurement_type = "over_10k")
-}) %>% 
-  filter(!is.na(start_date)) ## remove non-data rows
+
+})
+  
+
+## Remove non-data rows
+citz_over10k_data <- citz_over10k_data_raw %>% filter(!is.na(start_date)) 
+
+
+## Write to tmp folder
+write_csv(citz_over10k_data, here("tmp/citz_over10k_data.csv"))
+# citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
 
 
 #-------------------------------------------------------------------------------
@@ -139,22 +155,32 @@ citz_da_urls <- map_dfr(.x = citz_da_pages$.,
  
 
 # Supply column data types to mitigate empty rows generating data type "guessing"
-column_types = c("date", "text", "text", "text", "numeric", "text", "date", "text")
+column_types_da = c("date", "text", "text", "text", "numeric", "text", "date", "text")
+
 
 ## Map over each download URL, download and read in xlsx file, create a df with data from all files
-citz_da_data <- map_dfr(.x = citz_da_urls$.,
-                             .f = ~{GET(.x, write_disk(tf <- tempfile(fileext = ".xlsx")))
-
+citz_da_data_raw <- map_dfr(.x = citz_da_urls$.,
+                             .f = ~{temporary_file <- tempfile(fileext = ".xlsx")
+                               GET(.x, write_disk(temporary_file))
+                               
 fy <- str_sub(.x, -9, -6) #grab year from file name
 
-read_xlsx(tf, skip = 5,  col_types = column_types) %>%
+read_xlsx(temporary_file, skip = 5,  col_types = column_types_da) %>%
   clean_names() %>% 
   mutate(fiscal_year = fy, #add fy to df
          ministry_name = "citz",
          procurement_type = "direct_award")
-}) %>% 
-  filter(!is.na(start_date)) ## remove non-data rows
+})
+
+
+## Remove non-data rows
+citz_da_data <- citz_da_data_raw %>%filter(!is.na(start_date)) 
  
+
+## Write to tmp folder
+write_csv(citz_da_data, here("tmp/citz_da_data.csv"))
+# citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
+
 
 #-------------------------------------------------------------------------------
 ## Put Data Frames Together 
