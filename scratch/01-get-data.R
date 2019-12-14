@@ -11,6 +11,12 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 
+## Grab CITZ Procurement xlsx files from bcgov Open Information Catalogue
+## https://www2.gov.bc.ca/gov/content?id=9710AD9FEF33424589928C639851205B
+## and create machine-readable data frames
+
+
+## Load Libraries
 library(readxl)
 library(httr)
 library(janitor)
@@ -20,11 +26,6 @@ library(rvest)
 library(purrr)
 library(readr)
 library(here)
-
-
-## Grab CITZ Procurement xlsx files from bcgov Open Information Catalogue
-## https://www2.gov.bc.ca/gov/content?id=9710AD9FEF33424589928C639851205B
-## and create a machine-readable data frame
 
 
 #-------------------------------------------------------------------------------
@@ -120,7 +121,6 @@ citz_over10k_data <- citz_over10k_data_raw %>% filter(!is.na(start_date))
 
 ## Write to tmp folder
 write_csv(citz_over10k_data, here("tmp/citz_over10k_data.csv"))
-# citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
 
 
 #-------------------------------------------------------------------------------
@@ -179,33 +179,6 @@ citz_da_data <- citz_da_data_raw %>%filter(!is.na(start_date))
 
 ## Write to tmp folder
 write_csv(citz_da_data, here("tmp/citz_da_data.csv"))
-# citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
-
-
-#-------------------------------------------------------------------------------
-## Put Data Frames Together 
-
-#  [1] "start_date"                                     
-#  [2] "contract_reference_number"                      
-#  [3] "office_division_or_branch_procuring_the_service"
-#  [4] "name_of_the_contractor"                         
-#  [5] "contract_value"                                 
-#  [6] "description_of_work"                            
-#  [7] "delivery_date"                                  
-#  [8] "direct_award_criteria/procurement_process"                          
-#  [9] "fiscal_year"                                    
-# [10] "ministry_name"                                  
-# [11] "procurement_type" 
-
-foo <- citz_da_data %>%
-  rename("direct_award_criteria/procurement_process" = "direct_award_criteria")
-
-data <- citz_over10k_data %>% rename("direct_award_criteria/procurement_process" = "procurement_process",
-                             "office_division_or_branch_procuring_the_service" = "ministry_and_office_division_or_branch_procuring_the_service") %>% 
-  mutate(contract_value = amended_contract_value) %>% 
-bind_rows(foo)
-
-
 
 
 
