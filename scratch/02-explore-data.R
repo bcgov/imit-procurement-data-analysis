@@ -23,33 +23,37 @@ library(ggplot2)
 
 
 #-------------------------------------------------------------------------------
-## Merge Direct Award & Contracts >10K Data Frames
+## Read Data Frames from 01-get-data.R
 
 citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
 citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
 
 
-#  [1] "start_date"                                     
-#  [2] "contract_reference_number"                      
-#  [3] "office_division_or_branch_procuring_the_service"
-#  [4] "name_of_the_contractor"                         
-#  [5] "contract_value"                                 
-#  [6] "description_of_work"                            
-#  [7] "delivery_date"                                  
-#  [8] "direct_award_criteria/procurement_process"                          
-#  [9] "fiscal_year"                                    
-# [10] "ministry_name"                                  
-# [11] "procurement_type" 
+#-------------------------------------------------------------------------------
+## Combine Direct Award & Contracts >10K Data Frames
 
-foo <- citz_da_data %>%
-  rename("direct_award_criteria/procurement_process" = "direct_award_criteria")
-
-data <- citz_over10k_data %>% rename("direct_award_criteria/procurement_process" = "procurement_process",
-                             "office_division_or_branch_procuring_the_service" = "ministry_and_office_division_or_branch_procuring_the_service") %>% 
-  mutate(contract_value = amended_contract_value) %>% 
-bind_rows(foo)
+citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
+citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
 
 
+da_data <- citz_da_data %>%
+  rename("direct_award_criteria/procurement_process" = "direct_award_criteria",
+         "ministry_and_office_division_or_branch_procuring_the_service" = "office_division_or_branch_procuring_the_service")
 
+over10_data <- citz_over10k_data %>%
+  rename("direct_award_criteria/procurement_process" = "procurement_process") %>% 
+  mutate(contract_value = case_when(amended_contract_value == 0 ~ initial_contract_value,
+                                    TRUE ~ amended_contract_value)) %>% 
+  select(-initial_contract_value, -current_amendment, -amended_contract_value)
+
+citz_proc_data <- da_data %>% 
+bind_rows(over10_data)
+
+
+#-------------------------------------------------------------------------------
+## Explore
+
+citz_proc_data %>% 
+  
 
 
