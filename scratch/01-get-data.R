@@ -40,10 +40,10 @@ library(here)
 # 
 # GET(url, write_disk(temporary_file))
 # 
-# fy <- str_sub(url,-9,-6)
+# yr <- str_sub(url,-9,-6)
 # 
 # data <- read_xlsx(temporary_file, range = cell_cols("B:M")) %>%
-#   mutate(fiscal_year = fy)
+#   mutate(year = yr)
 # 
 # unlink(temporary_file)
 
@@ -102,13 +102,13 @@ citz_over10k_data_raw <- map_dfr(.x = citz_over10k_urls$.,
                              .f = ~{temporary_file <- tempfile(fileext = ".xlsx")
                                GET(.x, write_disk(temporary_file))
                               
-fy <- str_sub(.x, -9, -6) #grab year from file name
+yr <- str_sub(.x, -9, -6) #grab year from file name
 
 read_xlsx(temporary_file,
     range = cell_cols("B:M"), #grab select columns to mitigate empty, trailing columns
     col_names = column_names,
                 col_types = column_types_over10) %>%
-  mutate(fiscal_year = fy, #add fy to df
+  mutate(year = yr, #add fy to df
          ministry_name = "citz",
          procurement_type = "over_10k")
 
@@ -120,7 +120,7 @@ citz_over10k_data <- citz_over10k_data_raw %>% filter(!is.na(start_date))
 
 
 ## Write to tmp folder
-write_csv(citz_over10k_data, here("tmp/citz_over10k_data.csv"))
+write_csv(citz_over10k_data, here::here("tmp/citz_over10k_data.csv"))
 
 
 #-------------------------------------------------------------------------------
@@ -163,11 +163,11 @@ citz_da_data_raw <- map_dfr(.x = citz_da_urls$.,
                              .f = ~{temporary_file <- tempfile(fileext = ".xlsx")
                                GET(.x, write_disk(temporary_file))
                                
-fy <- str_sub(.x, -9, -6) #grab year from file name
+yr <- str_sub(.x, -9, -6) #grab year from file name
 
 read_xlsx(temporary_file, skip = 5,  col_types = column_types_da) %>%
   clean_names() %>% 
-  mutate(fiscal_year = fy, #add fy to df
+  mutate(year = yr, #add year to df
          ministry_name = "citz",
          procurement_type = "direct_award")
 })
@@ -178,7 +178,7 @@ citz_da_data <- citz_da_data_raw %>%filter(!is.na(start_date))
  
 
 ## Write to tmp folder
-write_csv(citz_da_data, here("tmp/citz_da_data.csv"))
+write_csv(citz_da_data, here::here("tmp/citz_da_data.csv"))
 
 
 #-------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ citz_proc_data <- da_data %>% bind_rows(over10_data)
 
 
 ## Write to tmp folder
-write_csv(citz_proc_data, here("tmp/citz_proc_data.csv"))
+write_csv(citz_proc_data, here::here("tmp/citz_proc_data.csv"))
 
 
 
