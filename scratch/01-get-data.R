@@ -181,4 +181,30 @@ citz_da_data <- citz_da_data_raw %>%filter(!is.na(start_date))
 write_csv(citz_da_data, here("tmp/citz_da_data.csv"))
 
 
+#-------------------------------------------------------------------------------
+## Combine Direct Award & Contracts >10K Data Frames
+
+# citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
+# citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
+
+
+da_data <- citz_da_data %>%
+  rename("direct_award_criteria/procurement_process" = "direct_award_criteria",
+         "ministry_and_office_division_or_branch_procuring_the_service" = "office_division_or_branch_procuring_the_service")
+
+over10_data <- citz_over10k_data %>%
+  rename("direct_award_criteria/procurement_process" = "procurement_process") %>% 
+  mutate(contract_value = case_when(amended_contract_value == 0 ~ initial_contract_value,
+                                    TRUE ~ amended_contract_value)) %>% 
+  select(-initial_contract_value, -current_amendment, -amended_contract_value)
+
+
+citz_proc_data <- da_data %>% bind_rows(over10_data)
+
+
+## Write to tmp folder
+write_csv(citz_proc_data, here("tmp/citz_proc_data.csv"))
+
+
+
 
