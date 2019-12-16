@@ -26,6 +26,9 @@ library(rvest)
 library(purrr)
 library(readr)
 library(here)
+library(conflicted)
+
+conflict_prefer("here", "here")
 
 
 #-------------------------------------------------------------------------------
