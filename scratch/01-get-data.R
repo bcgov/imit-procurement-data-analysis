@@ -27,9 +27,10 @@ library(purrr)
 library(readr)
 library(here)
 library(conflicted)
+library(tidyr)
 
 conflict_prefer("here", "here")
-
+conflict_prefer("filter", "dplyr")
 
 #-------------------------------------------------------------------------------
 ## Contracts Over $10K
@@ -197,9 +198,10 @@ da_data <- citz_da_data %>%
 
 over10_data <- citz_over10k_data %>%
   rename("direct_award_criteria/procurement_process" = "procurement_process") %>% 
-  mutate(contract_value = case_when(amended_contract_value == 0 ~ initial_contract_value,
-                                    TRUE ~ amended_contract_value)) %>% 
-  select(-initial_contract_value, -current_amendment, -amended_contract_value)
+  mutate(amendment_value = replace_na(current_amendment, 0)) %>% 
+  mutate(contract_value = initial_contract_value + amendment_value) %>% 
+  select(-initial_contract_value, -current_amendment, -amended_contract_value,
+         -amendment_value, -comments_optional_as_required)
 
 
 citz_proc_data <- da_data %>% bind_rows(over10_data)
