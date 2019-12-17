@@ -22,9 +22,10 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 library(conflicted)
+library(stringr)
 
 conflict_prefer("here", "here") #use here::here please
-
+conflict_prefer("filter", "dplyr")
 
 #-------------------------------------------------------------------------------
 ## Read Data 
@@ -41,22 +42,22 @@ da_records <- citz_proc_data %>%
   filter(procurement_type == "direct_award") 
 
 da_records %>% 
-  group_by(contract_reference_number, contract_value, fiscal_year) %>% 
+  group_by(contract_reference_number, contract_value, year) %>% 
   count() %>% 
-  filter(n > 1) #2 (1) duplicate entries in da data
+  filter(n > 1) #2 duplicate entries in da data (1 dupe each) 
   
 over10_records <-  citz_proc_data %>%
   filter(procurement_type == "over_10k") 
 
 over10_records %>% 
-  group_by(contract_reference_number, contract_value, fiscal_year) %>% 
+  group_by(contract_reference_number, contract_value, year) %>% 
   count() %>% 
-  filter(n > 1) #19 (8) duplicate entries in over_10k data
+  filter(n > 1) #2 duplicate entries in da data (1 dupe each) 
 
 
 #remove duplicates & contract_value == NA row (1)
 citz_proc_data_tidy <- citz_proc_data %>%
-  distinct(contract_reference_number, contract_value, fiscal_year, .keep_all = TRUE) %>% 
+  distinct(contract_reference_number, contract_value, year, .keep_all = TRUE) %>% 
   filter(!is.na(contract_value))
 
 
@@ -70,17 +71,22 @@ citz_proc_data_tidy <- citz_proc_data_tidy %>%
 
 
 #-------------------------------------------------------------------------------
-## 
+## Exploratory Visualization
 
+#all data by year & procurement type
 citz_proc_data_tidy %>% 
-  filter(procurement_type == "over_10k") %>% 
-  distinct(description_of_work)
-
-citz_proc_data_tidy %>% 
- group_by(fiscal_year, procurement_type) %>% 
+ group_by(year, procurement_type) %>% 
   summarise(total = sum(annual_contract_value)) %>% 
-  ggplot(aes(fiscal_year, total/1000000, fill = procurement_type)) +
-  geom_col()
+  ggplot(aes(year, total/1000000, fill = procurement_type)) +
+  geom_col(alpha = 0.6) +
+  theme_minimal()
 
-
+#STOB 63 data only by year & procurement type 
+citz_proc_data_tidy %>% 
+  filter(str_detect(description_of_work, "^63")) %>% 
+  group_by(year, procurement_type) %>% 
+  summarise(total = sum(annual_contract_value)) %>% 
+  ggplot(aes(year, total/1000000)) +
+  geom_col(alpha = 0.6) +
+  theme_minimal()
 
