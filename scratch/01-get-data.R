@@ -188,13 +188,15 @@ write_csv(citz_da_data, here::here("tmp/citz_da_data.csv"))
 #-------------------------------------------------------------------------------
 ## Combine Direct Award & Contracts >10K Data Frames
 
-# citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
-# citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
+citz_over10k_data <- read_csv(here("tmp/citz_over10k_data.csv"))
+citz_da_data <- read_csv(here("tmp/citz_da_data.csv"))
 
 
 da_data <- citz_da_data %>%
   rename("direct_award_criteria/procurement_process" = "direct_award_criteria",
-         "ministry_and_office_division_or_branch_procuring_the_service" = "office_division_or_branch_procuring_the_service")
+         "ministry_and_office_division_or_branch_procuring_the_service" = "office_division_or_branch_procuring_the_service") %>% 
+  mutate(detailed_description = description_of_work) %>% 
+  select(-description_of_work)
 
 over10_data <- citz_over10k_data %>%
   rename("direct_award_criteria/procurement_process" = "procurement_process") %>% 
