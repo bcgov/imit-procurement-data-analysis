@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and limitations under the License.
 
 
-## Quick exploration of CITZ Procurement data from bcgov Open Information Catalogue,
-## which is pulled and generated with 01-get-data.R script.
+## Quick exploration of tidy CITZ Procurement data from bcgov Open Information Catalogue,
+## which is pulled, generated & tidied with 01-get-data.R and 02-clean-data.R scripts.
 
 
 ## Load Libraries
@@ -27,47 +27,13 @@ library(stringr)
 conflict_prefer("here", "here") #use here::here please
 conflict_prefer("filter", "dplyr")
 
+
 #-------------------------------------------------------------------------------
 ## Read Data 
 
 #data frame from 01-get-data.R
-citz_proc_data <- read_csv(here("tmp/citz_proc_data.csv"))
+citz_proc_imit_data <- read_csv(here("tmp/citz_proc_imit_data.csv"))
 
-
-#-------------------------------------------------------------------------------
-## Tidy Data 
-
-#explore duplicates
-da_records <- citz_proc_data %>%
-  filter(procurement_type == "direct_award") 
-
-da_records %>% 
-  group_by(contract_reference_number, contract_value, year) %>% 
-  count() %>% 
-  filter(n > 1) #2 duplicate entries in da data (1 dupe each) 
-  
-over10_records <-  citz_proc_data %>%
-  filter(procurement_type == "over_10k") 
-
-over10_records %>% 
-  group_by(contract_reference_number, contract_value, year) %>% 
-  count() %>% 
-  filter(n > 1) #2 duplicate entries in da data (1 dupe each) 
-
-
-#remove duplicates & contract_value == NA row (1)
-citz_proc_data_tidy <- citz_proc_data %>%
-  distinct(contract_reference_number, contract_value, year, .keep_all = TRUE) %>% 
-  filter(!is.na(contract_value))
-
-
-#generate year columns and add average contract_value per year 
-#for multi-year contracts
-citz_proc_data_tidy <- citz_proc_data_tidy %>% 
-  mutate(start_year = year(start_date),
-         delivery_year =  year(delivery_date),
-         number_years = (delivery_year - start_year) + 1,
-         annual_contract_value = contract_value/number_years)
 
 
 #-------------------------------------------------------------------------------
