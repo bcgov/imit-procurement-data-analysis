@@ -158,6 +158,8 @@ citz_da_urls <- map_dfr(.x = citz_da_pages$.,
                              })  
  
 
+## Note: not all 27 resources are xlsx files, 4 are in PDF format (dropped for now)
+
 # Supply column data types to mitigate empty rows generating data type "guessing"
 column_types_da = c("date", "text", "text", "text", "numeric", "text", "date", "text")
 
