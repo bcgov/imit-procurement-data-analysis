@@ -69,27 +69,27 @@ citz_proc_data_tidy <- citz_proc_data_tidy %>%
 
 
 #-------------------------------------------------------------------------------
-## IMIT contracts? Manually generate a "source of truth" for use in modelling
+## IMIT contracts? Manually generate a "source of truth" for use in modelling?
 
 #All STOB 63 == IMIT
-citz_imit_proc <- citz_proc_data_tidy %>% 
-  mutate(imit = case_when(str_detect(description_of_work, "^63") ~ TRUE,
-                          TRUE ~ FALSE))
+# citz_proc_data_tidy %>% 
+#   mutate(imit = case_when(str_detect(description_of_work, "^63") ~ TRUE,
+#                           TRUE ~ FALSE))
 
 #Manually Assign all but STOB63 to IMIT
 
 #STOB61
-citz_imit_proc %>% filter(str_detect(description_of_work, "^61")) %>%
+citz_proc_data_tidy %>% filter(str_detect(description_of_work, "^61")) %>%
   distinct(detailed_description) %>%
   pull(detailed_description)
 
 #STOB60
-citz_imit_proc %>% filter(str_detect(description_of_work, "^60")) %>%
+citz_proc_data_tidy %>% filter(str_detect(description_of_work, "^60")) %>%
   distinct(detailed_description) %>%
   pull(detailed_description)
 
 #direct_awards
-citz_imit_proc %>% filter(procurement_type == "direct_award") %>%
+citz_proc_data_tidy %>% filter(procurement_type == "direct_award") %>%
   distinct(detailed_description) %>%
   pull(detailed_description)
 
@@ -226,7 +226,15 @@ imit_contracts <- tribble(
 "Internal audit of ISO 14001 Environmental Management System", TRUE,                                                                                                                                                  
 "Building demolition", FALSE,                                                                                                                                                                                          
 "Develop new and enhance existing Smart forms using Adobe Livecycle Developer", TRUE,
-"Service excellence workshop", FALSE,                                                                                                                                                        "Microsoft premier support for Dynamics DSE"                                                                                                                                         "Modernization roadmap development"                                                                                                                                                  "Consulting services during contract negotiation process"                                                                                                                            "Move online Freedom-of-Information form into production environment"                                                                                                                "Vendor direct server monitoring tool"                                                                                                                                               "Lead a restricted time line negotiation"                                                                                                                                            "Jurisdictional scan of services for upcoming procurement preparation"                                                                                                               "Keynote speaking presentation at staff learning conference"                                                                                                                         
+"Service excellence workshop", FALSE,                                                                                                                                                        
+"Microsoft premier support for Dynamics DSE", TRUE,                                                                                                                                         
+"Modernization roadmap development", FALSE,                                                                                                                                                  
+"Consulting services during contract negotiation process", FALSE,                                                                                                                            
+"Move online Freedom-of-Information form into production environment", TRUE,                                                                                                                
+"Vendor direct server monitoring tool", TRUE,                                                                                                                                               
+"Lead a restricted time line negotiation", FALSE,                                                                                                                                            
+"Jurisdictional scan of services for upcoming procurement preparation", FALSE,                                                                                                               
+"Keynote speaking presentation at staff learning conference", FALSE,                                                                                                                         
 "Convene, develop and deliver community forums", FALSE,                                                                                                                                      
 "Develop an economic development impact model to assess the economic benefits of connectivity in rural BC", FALSE,                                                                           
 "Impact assessment for data residing in the BC Geographic Warehouse (BCGW)", TRUE,                                                                                                          
@@ -254,82 +262,91 @@ imit_contracts <- tribble(
 "Electrical upgrades to 506 Government Street", FALSE,                                                                                                                                       
 "Consultation regarding lessons learned through large procurements", FALSE,                                                                                                                 
 "Briefing note training", FALSE,                                                                                                                                                             
-"Develop project narrative, including refined core value proposition, key message, and standard language"                                                                            
-"Information technology general controls review"                                                                                                                                     
-"Speaker for the Procurement Community of Practice symposium"                                                                                                                        
-"Panel member for the Procurement Community of Practice symposium"                                                                                                                   
-"Keynote speaker for the Procurement Community of Practice symposium"                                                                                                                
-"Consulting services for central heating plant & district energy system"                                                                                                             
-"Strategic advisory services in support of Surrey Pretrial project agreement"                                                                                                        
-"Provision of legal services"                                                                                                                                                        
-"Research, statistical analysis, algorithm design, testing and validation for topics related to public programs and policies"                                                        
-"Financial monitoring and audit services"                                                                                                                                            
-"Consultation service to assist government in establishing criteria against which ministries can be assessed, with respect to meeting their information management (IM) requirements"
-"Guidance and training for Data Innovation program users"                                                                                                                            
-"Consultation for Real Estate Services"                                                                                                                                              
-"Executive coaching"                                                                                                                                                                 
-"Provision of voice and data network services within a defined geographical area"                                                                                                    
-"Comprehensive recruitment, attraction, planning and assessment services"                                                                                                            
-"Review of forthcoming information management initiatives"                                                                                                                           
-"Training for Open Text Module"                                                                                                                                                      
-"Present/speak at staff learning event"                                                                                                                                              
-"Communications for Data Innovation Program governance proposals"                                                                                                                    
-"Installation of courthouse E-comm system"                                                                                                                                           
-"Deliver training courses for strategic technology roles across the BC Government to address Chief Information Officer succession planning requirements"                             
-"Consulting services to work with stakeholders and parties with vested interests, and guide repatriation of headstones to the Woodlands Memorial Garden in New Westminster."         
-"Provide digital telecommunications services to Gold River and Tahsis for PLNet"                                                                                                     
-"Travel expenses associated with attending workshops & meetings for BC Bid Renewal Project"                                                                                          
-"Training & mentoring on systems that are specific to the division"                                                                                                                  
-"Business process mapping linked to roles, responsibilities & accountabilities for BC Services Card issuance"                                                                        
-"Consulting services for contract negotiation"                                                                                                                                       
-"Develop conceptual model with core functional elements of emergency management"                                                                                                     
-"Consultation services for potential land sub-division"                                                                                                                              
-"Fees for providing the service of property appraisals"                                                                                                                              
-"Tenant improvements to building in Surrey"                                                                                                                                          
-"Assist in the development of Service BC's strategic service offering by facilitating the process and compiling a final report"                                                      
-"Acoustical testing Capital Park building a-1"                                                                                                                                       
-"Business Case Analysis Consulting"                                                                                                                                                  
-"Consulting Services"                                                                                                                                                                
-"Advisory Services - Cost Code Functionality"                                                                                                                                        
-"Six week contract to service the \"devOps\" system in the bridging period, while the competitive sourcing process is run."                                                          
-"Assistance with development of three year strategic business plan"                                                                                                                  
-"Upgrade of SiteMinder and HealthCheck software"                                                                                                                                     
-"Consulting services for building project"                                                                                                                                           
-"Financial advisory services"                                                                                                                                                        
-"Maintenance of equipment"                                                                                                                                                           
-"BC Bid proposal evaluation - reimbursement for travel expenses"                                                                                                                     
-"Training on negotiations and vendor relationship advice"                                                                                                                            
-"Advisory services for the Sourcing/Tech Strategy"                                                                                                                                   
-"Stakeholder engagement, communications and materials preparation"                                                                                                                   
-"Prosci Canada change management certification course"                                                                                                                               
-"Professional development online courses"                                                                                                                                            
-"Videographer"                                                                                                                                                                       
-"Consulting services for professional development"                                                                                                                                   
-"Design of templates and materials"                                                                                                                                                  
-"Demographics profiling and analytics on British Columbia population, lifestyle, lifestage and clusters segmentation."                                                               
-"Develop and deliver webinars to the BC Municipalities on how to create winning proposals and generate access to the Infrastructure Canada Smart City Challenge Program"             
-"Offsite records storage"                                                                                                                                                            
-"Speaker for Leadership Council Conference"                                                                                                                                          
-"Technical writing and communications support for Procurement Transformation"                                                                                                        
-"Great Northern Way Appraisal"                                                                                                                                                       
-"Development of a procurement strategy to modernize the procurement practices and tools"                                                                                             
-"Speaker for employee learning and development event (OCIO Connect 2017)"                                                                                                            
-"Correspondence tracking and reporting service (known as CLIFF)"                                                                                                                     
-"Annual maintenance and support for  HP TRIM licenses"                                                                                                                               
-"Financial year 17/18 consulting services"                                                                                                                                           
-"Facilitate executive-level workshops and provide instruction related to industry best practices for outsourcing including transition management and effective governance"           
-"Training and coaching for leaders and teams"                                                                                                                                        
-"Speaker/Presenter at Procurement Community of Practice Conference"                                                                                                                  
-"Supply and install 400 entrance pairs (voice and data cables) to Surrey Courthouse"                                                                                                 
-"Biometric Consulting for Okanagan Correctional Centre (year 2017/18)"                                                                                                               
-"Download, print, insert & deliver pay advices"                                                                                                                                      
-"Event coordinator for ministry-wide learning & development event"                                                                                                                   
-"Appraisal fee"  
+"Develop project narrative, including refined core value proposition, key message, and standard language", FALSE,                                                                            
+"Information technology general controls review", TRUE,                                                                                                                                     
+"Speaker for the Procurement Community of Practice symposium", FALSE,                                                                                                                        
+"Panel member for the Procurement Community of Practice symposium", FALSE,                                                                                                                   
+"Keynote speaker for the Procurement Community of Practice symposium", FALSE,                                                                                                                
+"Consulting services for central heating plant & district energy system", FALSE,                                                                                                             
+"Strategic advisory services in support of Surrey Pretrial project agreement", FALSE,                                                                                                        
+"Provision of legal services", FALSE,                                                                                                                                                        
+"Research, statistical analysis, algorithm design, testing and validation for topics related to public programs and policies", FALSE,                                                        
+"Financial monitoring and audit services", FALSE,                                                                                                                                            
+"Consultation service to assist government in establishing criteria against which ministries can be assessed, with respect to meeting their information management (IM) requirements", TRUE,
+"Guidance and training for Data Innovation program users", FALSE,                                                                                                                            
+"Consultation for Real Estate Services", FALSE,                                                                                                                                              
+"Executive coaching", FALSE,                                                                                                                                                                 
+"Provision of voice and data network services within a defined geographical area", TRUE,                                                                                                    
+"Comprehensive recruitment, attraction, planning and assessment services", FALSE,                                                                                                            
+"Review of forthcoming information management initiatives", TRUE,                                                                                                                           
+"Training for Open Text Module", TRUE,                                                                                                                                                      
+"Present/speak at staff learning event", FALSE,                                                                                                                                              
+"Communications for Data Innovation Program governance proposals", FALSE,                                                                                                                    
+"Installation of courthouse E-comm system", TRUE,                                                                                                                                           
+"Deliver training courses for strategic technology roles across the BC Government to address Chief Information Officer succession planning requirements", TRUE,                             
+"Consulting services to work with stakeholders and parties with vested interests, and guide repatriation of headstones to the Woodlands Memorial Garden in New Westminster.", FALSE,         
+"Provide digital telecommunications services to Gold River and Tahsis for PLNet", TRUE,                                                                                                    
+"Travel expenses associated with attending workshops & meetings for BC Bid Renewal Project", TRUE,                                                                                          
+"Training & mentoring on systems that are specific to the division", TRUE,                                                                                                                  
+"Business process mapping linked to roles, responsibilities & accountabilities for BC Services Card issuance", TRUE,                                                                        
+"Consulting services for contract negotiation", FALSE,                                                                                                                                       
+"Develop conceptual model with core functional elements of emergency management", FALSE,                                                                                                     
+"Consultation services for potential land sub-division", FALSE,                                                                                                                              
+"Fees for providing the service of property appraisals", FALSE,                                                                                                                              
+"Tenant improvements to building in Surrey", FALSE,                                                                                                                                          
+"Assist in the development of Service BC's strategic service offering by facilitating the process and compiling a final report", FALSE,                                                      
+"Acoustical testing Capital Park building a-1", FALSE,                                                                                                                                       
+"Business Case Analysis Consulting", FALSE,                                                                                                                                                  
+"Consulting Services", FALSE,                                                                                                                                                                
+"Advisory Services - Cost Code Functionality", TRUE,                                                                                                                                        
+"Six week contract to service the \"devOps\" system in the bridging period, while the competitive sourcing process is run.", TRUE,                                                          
+"Assistance with development of three year strategic business plan", FALSE,                                                                                                                  
+"Upgrade of SiteMinder and HealthCheck software", TRUE,                                                                                                                                     
+"Consulting services for building project", FALSE,                                                                                                                                           
+"Financial advisory services", FALSE,                                                                                                                                                        
+"Maintenance of equipment", FALSE,                                                                                                                                                          
+"BC Bid proposal evaluation - reimbursement for travel expenses", TRUE,                                                                                                                     
+"Training on negotiations and vendor relationship advice", FALSE,                                                                                                                            
+"Advisory services for the Sourcing/Tech Strategy", TRUE,                                                                                                                                   
+"Stakeholder engagement, communications and materials preparation", FALSE,                                                                                                                   
+"Prosci Canada change management certification course", FALSE,                                                                                                                               
+"Professional development online courses", FALSE,                                                                                                                                            
+"Videographer", TRUE,                                                                                                                                                                      
+"Consulting services for professional development", FALSE,                                                                                                                                   
+"Design of templates and materials", FALSE,                                                                                                                                                  
+"Demographics profiling and analytics on British Columbia population, lifestyle, lifestage and clusters segmentation.", FALSE,                                                               
+"Develop and deliver webinars to the BC Municipalities on how to create winning proposals and generate access to the Infrastructure Canada Smart City Challenge Program", FALSE,             
+"Offsite records storage", TRUE,                                                                                                                                                           
+"Speaker for Leadership Council Conference", TRUE,                                                                                                                                          
+"Technical writing and communications support for Procurement Transformation", FALSE,                                                                                                        
+"Great Northern Way Appraisal", FALSE,                                                                                                                                                       
+"Development of a procurement strategy to modernize the procurement practices and tools", TRUE,                                                                                            
+"Speaker for employee learning and development event (OCIO Connect 2017)", TRUE,                                                                                                            
+"Correspondence tracking and reporting service (known as CLIFF)", TRUE,                                                                                                                     
+"Annual maintenance and support for  HP TRIM licenses", TRUE,                                                                                                                               
+"Financial year 17/18 consulting services", FALSE,                                                                                                                                           
+"Facilitate executive-level workshops and provide instruction related to industry best practices for outsourcing including transition management and effective governance", FALSE,           
+"Training and coaching for leaders and teams", FALSE,                                                                                                                                        
+"Speaker/Presenter at Procurement Community of Practice Conference", FALSE,                                                                                                                  
+"Supply and install 400 entrance pairs (voice and data cables) to Surrey Courthouse", TRUE,                                                                                                 
+"Biometric Consulting for Okanagan Correctional Centre (year 2017/18)", FALSE,                                                                                                               
+"Download, print, insert & deliver pay advices", FALSE,                                                                                                                                      
+"Event coordinator for ministry-wide learning & development event", FALSE,                                                                                                                   
+"Appraisal fee", FALSE  
 )
 
 imit_contracts %>% group_by(detailed_description) %>% count()
 
 
+#-------------------------------------------------------------------------------
+## Merge IMIT logical data
+citz_imit_proc <- citz_proc_data_tidy %>%
+  left_join(imit_contracts) %>%
+  mutate(imit = case_when(str_detect(description_of_work, "^63") ~ TRUE,
+                                    TRUE ~ imit))
+
+
+#-------------------------------------------------------------------------------
 ## Write to tmp folder
 write_csv(citz_imit_proc, here::here("tmp/citz_imit_proc_data.csv"))
 
