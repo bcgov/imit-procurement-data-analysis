@@ -68,4 +68,12 @@ citz_proc_imit_data %>% filter(str_detect(name_of_the_contractor, "TELUS"))
 citz_proc_imit_data %>% filter(str_detect(name_of_the_contractor, "ESIT"))
 
 
-
+citz_proc_imit_data %>% 
+ filter(!str_detect(description_of_work, "^63") | procurement_type == "direct_award") %>% 
+  group_by(year, imit) %>% 
+  summarise(total = sum(annual_contract_value)) %>% 
+  ggplot(aes(year, total/1000000, fill = imit)) +
+  geom_col(alpha = 0.6) +
+  theme_minimal() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
