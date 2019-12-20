@@ -32,7 +32,7 @@ conflict_prefer("filter", "dplyr")
 ## Read Data 
 
 #data frame from 01-get-data.R
-citz_proc_imit_data <- read_csv(here("tmp/citz_proc_imit_data.csv"))
+citz_proc_imit_data <- read_csv(here("tmp/citz_imit_proc_data.csv"))
 
 
 
@@ -40,32 +40,21 @@ citz_proc_imit_data <- read_csv(here("tmp/citz_proc_imit_data.csv"))
 ## Exploratory Visualization
 
 
-#all data by year & procurement type
-citz_proc_data_tidy %>% 
- group_by(year, procurement_type) %>% 
+#all data by year & imit
+citz_proc_imit_data %>% 
+ group_by(year, imit) %>% 
   summarise(total = sum(annual_contract_value)) %>% 
-  ggplot(aes(year, total/1000000, fill = procurement_type)) +
+  ggplot(aes(year, total/1000000, fill = imit)) +
   geom_col(alpha = 0.6) +
   theme_minimal() +
   theme(panel.grid.major.x = element_blank(),
         panel.grid.minor.x = element_blank())
 
 
-#all data by year & procurement process
-citz_proc_data_tidy %>% 
- group_by(year, `direct_award_criteria/procurement_process`) %>% 
-  summarise(total = sum(annual_contract_value)) %>% 
-  ggplot(aes(year, total/1000000, fill = `direct_award_criteria/procurement_process`)) +
-  geom_col(alpha = 0.6) +
-  theme_minimal() +
-  theme(panel.grid.major.x = element_blank(),
-        panel.grid.minor.x = element_blank())
-
-
-#STOB 63 data only by year & procurement type 
-citz_proc_data_tidy %>% 
+#STOB 63 data only by year
+citz_proc_imit_data %>% 
   filter(str_detect(description_of_work, "^63")) %>% 
-  group_by(year, procurement_type) %>% 
+  group_by(year) %>% 
   summarise(total = sum(annual_contract_value)) %>% 
   ggplot(aes(year, total/1000000)) +
   geom_col(alpha = 0.6) +
@@ -74,9 +63,9 @@ citz_proc_data_tidy %>%
         panel.grid.minor.x = element_blank())
 
 
-#-------------------------------------------------------------------------------
-## Text Data Corpus
-
+citz_proc_imit_data %>% filter(str_detect(name_of_the_contractor, "IBM"))
+citz_proc_imit_data %>% filter(str_detect(name_of_the_contractor, "TELUS"))
+citz_proc_imit_data %>% filter(str_detect(name_of_the_contractor, "ESIT"))
 
 
 
