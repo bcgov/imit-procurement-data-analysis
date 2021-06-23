@@ -50,9 +50,9 @@ An exploration of IM/IT Payments data for British Columbia. This document outlin
 
 #### Payments
 
-Get the publicly available data from the B.C. Data Catalogue---Consolidated Revenue Fund Detailed Schedules of Payments - Other Supplier Payments record---released under the [Open Government Licence &mdash; British Columbia licence](https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61).
+Get the publicly available data from the B.C. Data Catalogue---Consolidated Revenue Fund Detailed Schedules of Payments - Other Supplier Payments record---released under the [Open Government Licence &mdash; British Columbia licence](https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61): <https://catalogue.data.gov.bc.ca/dataset/consolidated-revenue-fund-detailed-schedules-of-payments-other-supplier-payments>
 
-Get the raw data from the consolidated-revenue-fund-detailed-schedules-of-payments-other-supplier-payments record:
+Get the raw data:
 
 ```{r get-bcdc-data}
 ## Open the record in default browser
@@ -68,6 +68,22 @@ payment_record <- bcdc_get_record("f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc")
 
 payments_resources_df <- payment_record$resource_df %>% 
   mutate(year = str_sub(name,-31, -27))
+
+# df2017 <- bcdc_get_data("f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc", "237a7c70-7acb-4e89-be64-23c2fec61f0d")
+
+payments_df_list <- map2(.x = payments_resources_df$id, 
+        .y = payments_resources_df$year, 
+        .f = ~{bcdc_get_data(record = "f6bad1d5-d1dc-4fdd-a076-650f55cc3fbc",
+                        resource = .x) %>%
+         mutate(year = as.numeric(.y))
+          })
+
+map(payments_df_list, ~ colnames(.x))
+
+# 2020 file has metadata at the top, needs to be cleaned for the code to run
+
+# payments_df_list[[1]]  <- payments_df_list[[1]] %>%
+
 
 payments_raw <- map2_dfr(.x = payments_resources_df$id, 
         .y = payments_resources_df$year, 
